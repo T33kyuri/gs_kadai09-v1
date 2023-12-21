@@ -1,0 +1,160 @@
+
+// const http = require("http");
+// const html = require("fs").readFileSync("./index.html") 
+//fsというライブラリ（htmlファイルを処理するモジュール）を非同期処理でファイルを読み込む
+
+// 勝手にリロードしてもらるモジュール nodemon は package.json で確認できる。
+
+const { engine } = require ("express-handlebars");
+const fileUpload = require("express-fileupload");
+
+const mysql = require("mysql");
+
+
+
+const express = require("express");
+const app = express();
+//express モジュールを呼び出し、expressを使えるようにapp関数に組み込む
+//express を使って、ローカルサーバーを立ち上げ
+const userRouter = require("./routes/user"); 
+
+const PORT = 5000;
+
+// ミドルウェアとしてfilruploadを宣言
+app.use(fileUpload());
+
+// ミドルウェアとしてfilruploadを宣言
+app.use(express.static("upload"));
+
+
+app.engine('handlebars', engine());
+app.set('view engine', 'handlebars');
+app.set('views', './views');
+
+
+// コネクションプールを作成 connection pool]
+// オープンな状態（すぐに）データのやり取りができる
+const pool = mysql.createPool({
+  connectionLimit: 10,
+  host: "localhost",
+  user: "root",
+  password: "root",
+  database: "image-uploader-1",
+
+});
+
+
+
+
+
+app.get('/', (req, res) => {
+    res.render('home');
+
+
+  pool.getConnection((err, connection) => {
+    if (err) {
+      console.error("MYSQLとの接続エラー", err);
+      // エラーが発生した場合にクラッシュさせる代わりに、エラーページを表示するなどの処理を追加できます
+      return res.status(500).send("MYSQLとの接続エラー");
+    }
+
+    console.log("MYSQLと接続中");
+  })
+});
+
+app.post('/', (req, res) => {
+  // 送信用の関数 下記に何のファイルを送信するのかを記述
+    // console.log(req.files);
+
+
+  let imageFile = req.files.imageFile;
+  // 保存するファイルを変数に格納
+  // console.log(imageFile);
+
+  // 保存先を指定
+  let uploadPath = __dirname + "/upload/" + imageFile.name
+  // uploadに保存したファイル名
+
+
+  // サーバーに画像ファイルを置く場所の指定
+  imageFile.mv(uploadPath, function(err){
+  // イメージファイルのmvという関数があり、その引数にuploadPathを設定
+  // コールバック関数を設定し、エラーが確認できるようにしている。
+  
+    if (err) return res.status(500).send(err);
+    res.send("画像アップロードに成功しました");
+    });
+
+});
+
+
+
+
+// // ミドルウェアの宣言
+// app.use(mylogger);
+
+// // htmlのように、静的なファイルを使うために
+// // app.use(express.static("public"));
+// //publicフォルダにあるhtmlを表示する
+
+// // 動的なファイル（データベースを読み込ませる等）を使うために
+// app.set("view engine", "ejs");
+// // "view engine"はexpressで用意されているテンプレートエンジン
+// // データベースで用意したデータをテンプレートエンジンに読み込ませて
+// // htmlで表示する
+// // 「npm i ejs」
+
+
+// //ローカルサーバーを設定
+// app.get("/", (req, res) => {
+//   // ブラウザでURLをenterキーで押すのはgetメソッドのため、
+//   // ルートディレクトリを指定（"/"）してサーバーに投げかけ
+//   //エンドポイントではなく、ルートディレクトリを設定
+
+//   // console.log("hallo express");
+//   // res.send("<h1>こんにちは</h1>");  // ブラウザで文字を表示
+
+//   // res.sendStatus(400); //ステータス400番台はクライアントに問題があるエラー
+//   // res.status(500).send("エラーです"); //ステータス500番台はサーバー側に問題がある場合のエラー
+//   // res.status(500).json({ msg: "エラーです" }); 
+
+//   res.render("index", {text: "NodejsとExpress"});
+//   // indexを読み込むように指示
+
+// });
+
+// // ユーザー情報は user.js で管理
+// // app.get("/user", (req, res) => {
+// //   res.send("ユーザーです"); 
+// // });
+
+// // app.get("/user/info", (req, res) => {
+// //   res.send("ユーザー情報です"); 
+// // });
+
+
+
+// // ルーティング（ルーティングを設計）
+// app.use("/user", userRouter); //user以降のエンドポイントはuserRouterが管理
+// // その他の使用例
+// // app.use("/auth", authRouter);
+// // app.use("/customer", customerRouter);
+// // app.use("/product", productRouter);
+
+
+// // ミドルウェア（サーバーにリクエストを送る前にチェックなど）
+// // ミドルウェアは一番上に宣言する必要がある
+// function mylogger(req, res, next){
+//   console.log(req.originalUrl);
+//   next();
+// }
+// // 参考；userでしか使用したくない場合は、user.jsにて追加・作成
+// // 認証しているかどうかのチェックをする機能
+// // 特定のエンドポイントにのみ適用する場合は、引数に追加する。
+// // 例： app.get("/", mylogger ,  (req, res) => {
+
+
+app.listen(PORT, () => 
+  console.log("サーバーが起動しました"));
+
+

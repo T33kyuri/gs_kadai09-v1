@@ -1,0 +1,22 @@
+{{!-- <h1>Hello Template Engine！</h1> --}}
+
+<form action="/" method="post" enctype="multipart/form-data">
+  {{!-- エンコードタイプのこと --}}
+  <h3>画像をアップロードする</h3>
+  <input type="file" name="imageFile" accept="image/*" />
+  <input type="submit" /> 
+  {{!-- type="submit"にしないと、ポストメソッドが発動しない --}}
+
+<div>
+  {{!-- テンプレートエンジンの書き方 --}}
+  {{#each rows}}
+  <P>↓に保存された画像が出力されます。</P>
+  <img src={{this.imageName}} alt="">
+  <p>{{this.imageName}}</p>
+  {{/each}}
+
+</div>
+
+
+</form>
+
